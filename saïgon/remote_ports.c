@@ -16,7 +16,7 @@ pull_remote_port(
   mach_msg_type_name_t local_rights = 0;
   err = mach_port_extract_right(task_port, remote_port_name, disposition, &local_name, &local_rights);
   if (err != KERN_SUCCESS) {
-    printf("unable to extract right from remote task: %x %s\n", err, mach_error_string(err));
+    printf("[INFO]: unable to extract right from remote task: %x %s\n", err, mach_error_string(err));
     return 0;
   }
   

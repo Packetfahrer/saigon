@@ -14,11 +14,14 @@
 #define Utilities_h
 
 int ami_jailbroken();
-void set_privileged_port(mach_port_t privileged_port, mach_port_t launchd_port);
+
+void set_privileged_port(mach_port_t _privileged_port, task_t launchd_task);
 mach_port_t get_privileged_port();
-mach_port_t get_launchd_port();
-mach_port_name_t get_launchd_port_name();
-void set_launchd_port_name(mach_port_name_t pt_name);
+mach_port_t get_launchd_task();
+
+void set_self_port_name(mach_port_name_t pt_name);
+mach_port_name_t get_self_port_name();
+
 void kernel_panic();
 char * utils_get_base64_payload(void * buffer, size_t length);
 

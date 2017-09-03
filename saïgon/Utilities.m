@@ -12,8 +12,8 @@
 
 // Used accross the exploits
 mach_port_t privileged_port = MACH_PORT_NULL;
-mach_port_t launchd_port = MACH_PORT_NULL;
-mach_port_name_t launchd_port_name = MACH_PORT_NULL;
+task_t launchd_task = MACH_PORT_NULL;
+mach_port_name_t self_port_name = MACH_PORT_NULL;
 
 int ami_jailbroken () {
     
@@ -25,9 +25,10 @@ int ami_jailbroken () {
 }
 
 // Sets the ports
-void set_privileged_port(mach_port_t _privileged_port, mach_port_t _launchd_port) {
+void set_privileged_port(mach_port_t _privileged_port, task_t _launchd_task) {
     privileged_port = _privileged_port;
-    launchd_port = _launchd_port;
+    launchd_task = _launchd_task;
+    
 }
 
 // returns the priveleged port
@@ -35,19 +36,19 @@ mach_port_t get_privileged_port() {
     return privileged_port;
 }
 
-// returns launchd's port
-mach_port_t get_launchd_port() {
-    return launchd_port;
+// returns the launchd's task
+task_t get_launchd_task() {
+    return launchd_task;
 }
 
 // Sets the port name
-void set_launchd_port_name(mach_port_name_t pt_name) {
-    launchd_port_name = pt_name;
+void set_self_port_name(mach_port_name_t pt_name) {
+    self_port_name = pt_name;
 }
 
 // returns launchd's port name
-mach_port_name_t get_launchd_port_name() {
-    return launchd_port_name;
+mach_port_name_t get_self_port_name() {
+    return self_port_name;
 }
 
 // Works only on i7, otherwise, exits

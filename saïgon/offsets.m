@@ -301,8 +301,9 @@ void init_RELEASE_ARM64_T7000_1630_37894221() {
     g_offsets.quad_format_string = 0xfffffff007069601 - g_offsets.quad_format_string;
     g_offsets.null_terminator = 0xfffffff00706a407 - g_offsets.kernel_base;
 }
+// iPad Air
 void init_RELEASE_ARM64_S5L8960X_1630_37893214() {
-    g_offsets.kernel_base = 0xfffffff0061bc000;
+    g_offsets.kernel_base = 0xfffffff006194000;
     g_offsets.l1icachesize_string = 0xfffffff00704b893 - g_offsets.kernel_base;
     g_offsets.osserializer_serialize = 0xfffffff00744ee4c - g_offsets.kernel_base;
     g_offsets.kern_proc = 0xfffffff0075b60e0 - g_offsets.kernel_base;

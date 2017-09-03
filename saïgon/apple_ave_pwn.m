@@ -242,7 +242,7 @@ kern_return_t apple_ave_pwn_init() {
 
 	if (KERN_SUCCESS != ret)
 	{
-		printf("[ERROR]: getting kernel pointer for surface %d\n", g_bad_surface_that_will_never_be_freed);
+		printf("[ERROR]: apple_ave_pwn_init getting kernel pointer for surface %d\n", g_bad_surface_that_will_never_be_freed);
 	}
 	else {
 		printf("[INFO]:g_bad_surface_that_will_never_be_freed's kernel pointer is %p\n", g_bad_surface_that_will_never_be_freed_kernel_ptr);
