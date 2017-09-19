@@ -17,6 +17,11 @@
 		752F27BD1F5A06CA0085AE99 /* unjail.m in Sources */ = {isa = PBXBuildFile; fileRef = 752F27B91F5A06760085AE99 /* unjail.m */; };
 		752F27C01F5A07480085AE99 /* extra_offsets.m in Sources */ = {isa = PBXBuildFile; fileRef = 752F27BF1F5A07450085AE99 /* extra_offsets.m */; };
 		7530515E1F5B51B20090835C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7530515D1F5B51B20090835C /* AppDelegate.swift */; };
+		7534481D1F6A2EDE00E89C9E /* bootstrap.tar in Resources */ = {isa = PBXBuildFile; fileRef = 7534481C1F6A2EDE00E89C9E /* bootstrap.tar */; };
+		7534481F1F6A2EEE00E89C9E /* launchctl in Resources */ = {isa = PBXBuildFile; fileRef = 7534481E1F6A2EEE00E89C9E /* launchctl */; };
+		753448211F6A2EF600E89C9E /* tar in Resources */ = {isa = PBXBuildFile; fileRef = 753448201F6A2EF600E89C9E /* tar */; };
+		753448231F6A2F4100E89C9E /* reload in Resources */ = {isa = PBXBuildFile; fileRef = 753448221F6A2F4100E89C9E /* reload */; };
+		753448251F6A337600E89C9E /* dropbear.plist in Resources */ = {isa = PBXBuildFile; fileRef = 753448241F6A337600E89C9E /* dropbear.plist */; };
 		754A6E891F39611300F79723 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 754A6E871F3960C800F79723 /* Main.storyboard */; };
 		7592FF341F590D850035B752 /* ziva_main.m in Sources */ = {isa = PBXBuildFile; fileRef = 7592FF331F590D850035B752 /* ziva_main.m */; };
 		7592FF361F590FCA0035B752 /* apple_ave_utils.m in Sources */ = {isa = PBXBuildFile; fileRef = 7592FF351F590FCA0035B752 /* apple_ave_utils.m */; };
@@ -69,6 +74,11 @@
 		752F27BE1F5A07450085AE99 /* extra_offsets.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = extra_offsets.h; sourceTree = "<group>"; };
 		752F27BF1F5A07450085AE99 /* extra_offsets.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = extra_offsets.m; sourceTree = "<group>"; };
 		7530515D1F5B51B20090835C /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		7534481C1F6A2EDE00E89C9E /* bootstrap.tar */ = {isa = PBXFileReference; lastKnownFileType = archive.tar; path = bootstrap.tar; sourceTree = "<group>"; };
+		7534481E1F6A2EEE00E89C9E /* launchctl */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = launchctl; sourceTree = "<group>"; };
+		753448201F6A2EF600E89C9E /* tar */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = tar; sourceTree = "<group>"; };
+		753448221F6A2F4100E89C9E /* reload */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = reload; sourceTree = "<group>"; };
+		753448241F6A337600E89C9E /* dropbear.plist */ = {isa = PBXFileReference; lastKnownFileType = file.bplist; path = dropbear.plist; sourceTree = "<group>"; };
 		754A6E871F3960C800F79723 /* Main.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		7592FF331F590D850035B752 /* ziva_main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ziva_main.m; sourceTree = "<group>"; };
 		7592FF351F590FCA0035B752 /* apple_ave_utils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = apple_ave_utils.m; sourceTree = "<group>"; };
@@ -264,6 +274,11 @@
 				75077EF01F32664A00F0B292 /* saïgon-Bridging-Header.h */,
 				7530515D1F5B51B20090835C /* AppDelegate.swift */,
 				B0CFEB291EEEEDD900310825 /* Info.plist */,
+				7534481C1F6A2EDE00E89C9E /* bootstrap.tar */,
+				753448241F6A337600E89C9E /* dropbear.plist */,
+				7534481E1F6A2EEE00E89C9E /* launchctl */,
+				753448201F6A2EF600E89C9E /* tar */,
+				753448221F6A2F4100E89C9E /* reload */,
 				B0CFEB241EEEEDD900310825 /* Assets.xcassets */,
 			);
 			name = "saïgon";
@@ -332,6 +347,11 @@
 						DevelopmentTeam = D34X7XXW5V;
 						LastSwiftMigration = 0900;
 						ProvisioningStyle = Automatic;
+						SystemCapabilities = {
+							com.apple.BackgroundModes = {
+								enabled = 0;
+							};
+						};
 					};
 				};
 			};
@@ -358,9 +378,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				753448211F6A2EF600E89C9E /* tar in Resources */,
+				7534481D1F6A2EDE00E89C9E /* bootstrap.tar in Resources */,
+				7534481F1F6A2EEE00E89C9E /* launchctl in Resources */,
 				B0CFEB251EEEEDD900310825 /* Assets.xcassets in Resources */,
 				750D9CCB1F4726A600F0ACE7 /* IOKit in Resources */,
 				754A6E891F39611300F79723 /* Main.storyboard in Resources */,
+				753448231F6A2F4100E89C9E /* reload in Resources */,
+				753448251F6A337600E89C9E /* dropbear.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

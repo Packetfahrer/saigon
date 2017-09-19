@@ -11,6 +11,7 @@
 
 typedef struct offsets_e {
 	uint64_t kernel_base;
+    char * driver_name;
 	uint64_t encode_frame_offset_chroma_format_idc;
 	uint64_t encode_frame_offset_ui32_width;
 	uint64_t encode_frame_offset_ui32_height;
@@ -52,6 +53,7 @@ offsets_t offsets_get_offsets();
 void * offsets_get_kernel_base();
 void offsets_set_kernel_base(void * kernel_base);
 
+kern_return_t set_driver_offsets(char * driver_name);
 
 // offsets from the main kernel 0xfeedfacf
 extern uint64_t allproc_offset;

@@ -42,7 +42,7 @@ extern kern_return_t mach_vm_allocate
  );
 
 uint64_t jmpbuf_and_jop_addr = 0;
-mach_msg_id_t msgh_id = 0x0;
+mach_msg_id_t msgh_id = 0x12344321;
 
 /* 
   returns a send right to a mach_memory_entry port
@@ -282,7 +282,7 @@ add_heap_groom_to_dictionary(oxpc_object_t dict)
   return dict; 
 }
 
-int stop_flipper_thread = 0;
+volatile int stop_flipper_thread = 0;
 
 static void*
 flipper_thread(

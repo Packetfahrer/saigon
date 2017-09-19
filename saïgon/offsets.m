@@ -7,6 +7,8 @@
 #include <errno.h>
 #import <sys/sysctl.h>
 
+#include "apple_ave_utils.h"
+
 static offsets_t g_offsets;
 static void * g_kernel_base = NULL;
 
@@ -47,7 +49,34 @@ offsets_t offsets_get_offsets() {
     return g_offsets;
 }
 
+kern_return_t set_driver_offsets (char * driver_name) {
+    
+    printf("[INFO]: Setting offsets for driver: %s", driver_name);
 
+    g_offsets.driver_name = driver_name;
+
+    if(strcmp(driver_name, "AppleAVE2Driver") == 0) {
+        
+//        g_offsets.encode_frame_input_buffer_size = 0x300;
+//        g_offsets.encode_frame_output_buffer_size = 0x1E8;
+        
+        // TODO: Add chroma, UI32Width, etc..
+        
+    } else if(strcmp(driver_name, "AppleVXE380Driver") == 0) {
+        
+//        g_offsets.encode_frame_input_buffer_size = 0x650;
+//        g_offsets.encode_frame_output_buffer_size = 0x130;
+        
+        // TODO: Add chroma, UI16Width, etc..
+    } else {
+        
+        printf("[ERROR]: Driver %s is not supported (yet)", driver_name);
+        return KERN_ABORTED;
+    }
+    
+    
+    return KERN_SUCCESS;
+}
 
 typedef void (*init_func)(void);
 
@@ -59,12 +88,19 @@ void init_default(){
      There's a check whether 0 <= chroma <= 4, Taken from *(X19 + W8)
      The only call from that branch is just below a lot of memcpys.
      
+     0xfffffff0066a4AD0: chroma
+     0xfffffff0066a4AD0 - 0xfffffff0066a4AA8 = 0x28
+     
      Let's say that W8 is 0x4AD0 (our case for that symbol).
      We see that there's a memcpy(X19 + 0x4AA8, X27 + 0x3B70, 0x5AC)
      Our chroma offset falls within that memcpy.
      So if 0x4AD0 is the chroma offset, 0x4AD0 - 0x4AA8 == 0x28.
      The memcpy from our controlled input starts at 0x3B70 in that case.
      Therefore the chroma format offset is 0x3B70 + 0x28.
+     */
+    /*
+     memmovea_74(v13 + 0x4AA8, v20 + 0x3B70, 0x5ACLL);
+     v32 = *((_DWORD *)v13 + 0x12B4);
      */
     g_offsets.encode_frame_offset_chroma_format_idc = (0x3B70+0x28);
     
@@ -76,7 +112,11 @@ void init_default(){
      X28 is ui32Width in our case, which is X19 + 0x194C.
      Therefore 0xA14 is ui32Width in our case
      */
-    g_offsets.encode_frame_offset_ui32_width = (0xA10+4);
+    /*
+     v30 = v13 + 0x194C;
+     *(_DWORD *)v30 <= 0xBFu
+     */
+    g_offsets.encode_frame_offset_ui32_width = (0x380); // AVEH7: 0xA10+4
     
     /*
      Just the same explanation as before, but instead of 0x194C, 0x1950 is being checked.
@@ -104,8 +144,20 @@ void init_default(){
      "AVE WARNING: m_PoweredDownWithClientsStillRegistered = true - ask to reset, the HW is in a bad state..."
      One just slightly above an IOMalloc(0x28), one somewhere else.
      Go to the one above the IOMalloc.
+     // IOMalloc's address:
+     AVEH7: 0xfffffff0066bef44
+     VXE380:
+     
      Above the IOMalloc there's something that looks like the following:
-     LDR             X0, [X23,#0x11D8]
+     
+     // AVE:
+     0xfffffff0066a38d0 E0EE48F9               ldr        x0, [x23, #0x11d8]
+     0xfffffff0066a38d4 A00000B5               cbnz       x0, sub_fffffff0066a2764+4484
+     0xfffffff0066a38d8 00058052               movz       w0, #0x28
+     0xfffffff0066a38dc 9A6D0094               bl         sub_fffffff0066bef38+12
+     0xfffffff0066a38e0 E0EE08F9               str        x0, [x23, #0x11d8]
+
+     LDR             X0, [X23,#0x11D8] ; 0xfffffff0066a38d0 (AVEH7)
      CBNZ            X0, somewhere
      MOV             W0, #0x28
      BL              _IOMalloc
@@ -113,7 +165,7 @@ void init_default(){
      
      The offset is where the IOMalloc put its allocated address.
      */
-    g_offsets.encode_frame_offset_iosurface_buffer_mgr = (0x11D8);
+    g_offsets.encode_frame_offset_iosurface_buffer_mgr = (0x11D8); // 0x11D8: AVEH7
     
     /*
 	    Find the following string:
@@ -140,7 +192,7 @@ void init_default(){
      So 0x4A88 - 0x1C90 == 0x2DF8
      So 0x2DF8 + 0xD58(that's where they start copying from our input buffer) == 0x3B50.
      */
-    g_offsets.encode_frame_offset_keep_cache = (0x3B50);
+    g_offsets.encode_frame_offset_keep_cache = (0x3B50); // AVEH7: 0x3B50
     
     /* IOFence current fences list head in the IOSurface object */
     
@@ -184,7 +236,7 @@ void init_RELEASE_ARM64_T8010_1630_37894221() {
     g_offsets.all_proc = 0xfffffff0075f0478 - g_offsets.kernel_base;
     g_offsets.copyout = 0xfffffff0071c885c - g_offsets.kernel_base;
     g_offsets.panic = 0xfffffff0070efcec - g_offsets.kernel_base;
-    g_offsets.quad_format_string = 0xfffffff00705d5d1 - g_offsets.quad_format_string;
+    g_offsets.quad_format_string = 0xfffffff00705d5d1 - g_offsets.kernel_base;
     g_offsets.null_terminator = 0xfffffff00705e416 - g_offsets.kernel_base;
 }
 void init_RELEASE_ARM64_S5L8960X_1650_37895227() {
@@ -203,7 +255,7 @@ void init_RELEASE_ARM64_S5L8960X_1650_37895227() {
     g_offsets.all_proc = 0xfffffff0075a26a0 - g_offsets.kernel_base;
     g_offsets.copyout = 0xfffffff00718140c - g_offsets.kernel_base;
     g_offsets.panic = 0xfffffff0070aa818 - g_offsets.kernel_base;
-    g_offsets.quad_format_string = 0xfffffff00705ddd1 - g_offsets.quad_format_string;
+    g_offsets.quad_format_string = 0xfffffff00705ddd1 - g_offsets.kernel_base;
     g_offsets.null_terminator = 0xfffffff00705e3f9 - g_offsets.kernel_base;
 }
 void init_RELEASE_ARM64_T8010_1650_37895227() {
@@ -222,7 +274,7 @@ void init_RELEASE_ARM64_T8010_1650_37895227() {
     g_offsets.all_proc = 0xfffffff0075e66f0 - g_offsets.kernel_base;
     g_offsets.copyout = 0xfffffff0071c6414 - g_offsets.kernel_base;
     g_offsets.panic = 0xfffffff0070ef8f8 - g_offsets.kernel_base;
-    g_offsets.quad_format_string = 0xfffffff00705dda2 - g_offsets.quad_format_string;
+    g_offsets.quad_format_string = 0xfffffff00705dda2 - g_offsets.kernel_base;
     g_offsets.null_terminator = 0xfffffff00705e40f - g_offsets.kernel_base;
 }
 void init_RELEASE_ARM64_T7001_1650_37895227() {
@@ -241,7 +293,7 @@ void init_RELEASE_ARM64_T7001_1650_37895227() {
     g_offsets.all_proc = 0xfffffff0075ae7a0 - g_offsets.kernel_base;
     g_offsets.copyout = 0xfffffff00718d694 - g_offsets.kernel_base;
     g_offsets.panic = 0xfffffff0070b69b8 - g_offsets.kernel_base;
-    g_offsets.quad_format_string = 0xfffffff007069de1 - g_offsets.quad_format_string;
+    g_offsets.quad_format_string = 0xfffffff007069de1 - g_offsets.kernel_base;
     g_offsets.null_terminator = 0xfffffff00706a40f - g_offsets.kernel_base;
 }
 void init_RELEASE_ARM64_T7001_1630_37893214() {
@@ -260,7 +312,7 @@ void init_RELEASE_ARM64_T7001_1630_37893214() {
     g_offsets.all_proc = 0xfffffff0075bc528 - g_offsets.kernel_base;
     g_offsets.copyout = 0xfffffff00718fa48 - g_offsets.kernel_base;
     g_offsets.panic = 0xfffffff0070b6dd0 - g_offsets.kernel_base;
-    g_offsets.quad_format_string = 0xfffffff007069601 - g_offsets.quad_format_string;
+    g_offsets.quad_format_string = 0xfffffff007069601 - g_offsets.kernel_base;
     g_offsets.null_terminator = 0xfffffff00706a407 - g_offsets.kernel_base;
 }
 void init_RELEASE_ARM64_S8000_1630_37893214() {
@@ -279,7 +331,7 @@ void init_RELEASE_ARM64_S8000_1630_37893214() {
     g_offsets.all_proc = 0xfffffff0075ac438 - g_offsets.kernel_base;
     g_offsets.copyout = 0xfffffff007182cd4 - g_offsets.kernel_base;
     g_offsets.panic = 0xfffffff0070aabb0 - g_offsets.kernel_base;
-    g_offsets.quad_format_string = 0xfffffff00705d603 - g_offsets.quad_format_string;
+    g_offsets.quad_format_string = 0xfffffff00705d603 - g_offsets.kernel_base;
     g_offsets.null_terminator = 0xfffffff00705e409 - g_offsets.kernel_base;
 }
 void init_RELEASE_ARM64_T7000_1630_37894221() {
@@ -298,7 +350,7 @@ void init_RELEASE_ARM64_T7000_1630_37894221() {
     g_offsets.all_proc = 0xfffffff0075bc468 - g_offsets.kernel_base;
     g_offsets.copyout = 0xfffffff00718f974 - g_offsets.kernel_base;
     g_offsets.panic = 0xfffffff0070b6dd0 - g_offsets.kernel_base;
-    g_offsets.quad_format_string = 0xfffffff007069601 - g_offsets.quad_format_string;
+    g_offsets.quad_format_string = 0xfffffff007069601 - g_offsets.kernel_base;
     g_offsets.null_terminator = 0xfffffff00706a407 - g_offsets.kernel_base;
 }
 // iPad Air
@@ -318,7 +370,7 @@ void init_RELEASE_ARM64_S5L8960X_1630_37893214() {
     g_offsets.all_proc = 0xfffffff0075b0418 - g_offsets.kernel_base;
     g_offsets.copyout = 0xfffffff0071837c0 - g_offsets.kernel_base;
     g_offsets.panic = 0xfffffff0070aac30 - g_offsets.kernel_base;
-    g_offsets.quad_format_string = 0xfffffff00705d611 - g_offsets.quad_format_string;
+    g_offsets.quad_format_string = 0xfffffff00705d611 - g_offsets.kernel_base;
     g_offsets.null_terminator = 0xfffffff00705e411 - g_offsets.kernel_base;
 }
 void init_RELEASE_ARM64_T7000_1650_37895227() {
@@ -337,7 +389,7 @@ void init_RELEASE_ARM64_T7000_1650_37895227() {
     g_offsets.all_proc = 0xfffffff0075ae6e0 - g_offsets.kernel_base;
     g_offsets.copyout = 0xfffffff00718d59c - g_offsets.kernel_base;
     g_offsets.panic = 0xfffffff0070b69b8 - g_offsets.kernel_base;
-    g_offsets.quad_format_string = 0xfffffff007069de1 - g_offsets.quad_format_string;
+    g_offsets.quad_format_string = 0xfffffff007069de1 - g_offsets.kernel_base;
     g_offsets.null_terminator = 0xfffffff00706a40f - g_offsets.kernel_base;
 }
 void init_RELEASE_ARM64_S8000_1650_37895227() {
@@ -356,7 +408,7 @@ void init_RELEASE_ARM64_S8000_1650_37895227() {
     g_offsets.all_proc = 0xfffffff00759e6c0 - g_offsets.kernel_base;
     g_offsets.copyout = 0xfffffff007180914 - g_offsets.kernel_base;
     g_offsets.panic = 0xfffffff0070aa798 - g_offsets.kernel_base;
-    g_offsets.quad_format_string = 0xfffffff00705dde3 - g_offsets.quad_format_string;
+    g_offsets.quad_format_string = 0xfffffff00705dde3 - g_offsets.kernel_base;
     g_offsets.null_terminator = 0xfffffff00705e411 - g_offsets.kernel_base;
 }
 void init_RELEASE_ARM64_T7001_1630_37894221() {
@@ -375,7 +427,7 @@ void init_RELEASE_ARM64_T7001_1630_37894221() {
     g_offsets.all_proc = 0xfffffff0075bc528 - g_offsets.kernel_base;
     g_offsets.copyout = 0xfffffff00718fa6c - g_offsets.kernel_base;
     g_offsets.panic = 0xfffffff0070b6dd0 - g_offsets.kernel_base;
-    g_offsets.quad_format_string = 0xfffffff007069601 - g_offsets.quad_format_string;
+    g_offsets.quad_format_string = 0xfffffff007069601 - g_offsets.kernel_base;
     g_offsets.null_terminator = 0xfffffff00706a407 - g_offsets.kernel_base;
 }
 void init_RELEASE_ARM64_S5L8960X_1630_37894221() {
@@ -394,7 +446,7 @@ void init_RELEASE_ARM64_S5L8960X_1630_37894221() {
     g_offsets.all_proc = 0xfffffff0075b0418 - g_offsets.kernel_base;
     g_offsets.copyout = 0xfffffff0071837e4 - g_offsets.kernel_base;
     g_offsets.panic = 0xfffffff0070aac30 - g_offsets.kernel_base;
-    g_offsets.quad_format_string = 0xfffffff00705d611 - g_offsets.quad_format_string;
+    g_offsets.quad_format_string = 0xfffffff00705d611 - g_offsets.kernel_base;
     g_offsets.null_terminator = 0xfffffff00705e411 - g_offsets.kernel_base;
 }
 void init_RELEASE_ARM64_T8010_1630_37893214() {
@@ -413,7 +465,7 @@ void init_RELEASE_ARM64_T8010_1630_37893214() {
     g_offsets.all_proc = 0xfffffff0075f0478 - g_offsets.kernel_base;
     g_offsets.copyout = 0xfffffff0071c8838 - g_offsets.kernel_base;
     g_offsets.panic = 0xfffffff0070efcec - g_offsets.kernel_base;
-    g_offsets.quad_format_string = 0xfffffff00705d5d1 - g_offsets.quad_format_string;
+    g_offsets.quad_format_string = 0xfffffff00705d5d1 - g_offsets.kernel_base;
     g_offsets.null_terminator = 0xfffffff00705e416 - g_offsets.kernel_base;
 }
 void init_RELEASE_ARM64_T7000_1630_37893214() {
@@ -432,7 +484,7 @@ void init_RELEASE_ARM64_T7000_1630_37893214() {
     g_offsets.all_proc = 0xfffffff0075bc468 - g_offsets.kernel_base;
     g_offsets.copyout = 0xfffffff00718f950 - g_offsets.kernel_base;
     g_offsets.panic = 0xfffffff0070b6dd0 - g_offsets.kernel_base;
-    g_offsets.quad_format_string = 0xfffffff007069601 - g_offsets.quad_format_string;
+    g_offsets.quad_format_string = 0xfffffff007069601 - g_offsets.kernel_base;
     g_offsets.null_terminator = 0xfffffff00706a407 - g_offsets.kernel_base;
 }
 void init_RELEASE_ARM64_S8000_1630_37894221() {
@@ -451,7 +503,7 @@ void init_RELEASE_ARM64_S8000_1630_37894221() {
     g_offsets.all_proc = 0xfffffff0075ac438 - g_offsets.kernel_base;
     g_offsets.copyout = 0xfffffff007182cf8 - g_offsets.kernel_base;
     g_offsets.panic = 0xfffffff0070aabb0 - g_offsets.kernel_base;
-    g_offsets.quad_format_string = 0xfffffff00705d603 - g_offsets.quad_format_string;
+    g_offsets.quad_format_string = 0xfffffff00705d603 - g_offsets.kernel_base;
     g_offsets.null_terminator = 0xfffffff00705e409 - g_offsets.kernel_base;
 }
 

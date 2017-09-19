@@ -201,8 +201,10 @@ kern_return_t iosurface_utils_create_surface(io_connect_t connection, uint32_t *
 	{
 		printf("[ERROR]: creating IOSurface");
 		goto cleanup;
-	}
-
+    } else {
+        printf("[INFO]: successfully created surface\n");
+    }
+    
 	*surface_id_out = *(uint32_t*)(output_buffer + IOSURFACE_SURFACE_ID_OFFSET);
 	if (output_buffer_ptr)
 	{
@@ -233,14 +235,14 @@ kern_return_t iosurface_utils_get_connection(io_connect_t * conn_out) {
 	ret = host_get_io_master(mach_host_self(), &master_port);
 	if (KERN_SUCCESS != ret)
 	{
-		printf("[ERROR]:Failed getting master port");
+		printf("[ERROR]: Failed getting master port\n");
 		goto cleanup;
 	}
 
 	ret = IOServiceGetMatchingServices(master_port, IOServiceMatching(IOSURFACE_IOKIT_SERVICE), &itr);
 	if (KERN_SUCCESS != ret)
 	{
-		printf("[ERROR]:Failed getting matching services");
+		printf("[ERROR]: iosurface_utils_get_connection Failed getting matching services\n ");
 		goto cleanup;
 	}
 

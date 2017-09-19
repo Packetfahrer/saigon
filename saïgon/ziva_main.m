@@ -20,7 +20,7 @@ kern_return_t initialize_iokit_connections() {
 	ret = apple_ave_pwn_init();
 	if (KERN_SUCCESS != ret)
 	{
-		printf("[ERROR]: initializing AppleAVE pwn\n");
+		printf("[ERROR]: initializing AppleAVE/VXE380 pwn\n");
 		goto cleanup;
 	}
 
@@ -136,7 +136,7 @@ int ziva_go() {
 	{
 		printf("[ERROR]: using fake IOSurface... we should be dead by here.\n");
 	} else {
-		printf("We're still alive and the fake surface was used\n");
+        printf("[INFO]: We're still alive and the fake surface was used\n");
 	}
 
 	ret = test_rw_and_get_root();
@@ -149,7 +149,6 @@ int ziva_go() {
     // We're root now!
     printf("[INFO]: ziVA is now root\n");
     
-//    go_extra_recipe();
     
     return 1; // Success!
 }

@@ -45,13 +45,13 @@ struct Logging {
 
         view.layer.insertSublayer(gradient, at: 0)
         
-        if ami_jailbroken() == 1 {
-            tryButton.isEnabled = false;
-            jbButtonWidth.constant += 100
-            tryButton.frame = CGRect(x: self.tryButton.frame.origin.x, y: self.tryButton.frame.origin.y, width: self.tryButton.frame.width + 60, height: self.tryButton.frame.height)
-            tryButton.setTitle("already jailbroken",for: .disabled)
-            tryButton.alpha = 0.5
-        }
+//        if ami_jailbroken() == 1 {
+//            tryButton.isEnabled = false;
+//            jbButtonWidth.constant += 100
+//            tryButton.frame = CGRect(x: self.tryButton.frame.origin.x, y: self.tryButton.frame.origin.y, width: self.tryButton.frame.width + 60, height: self.tryButton.frame.height)
+//            tryButton.setTitle("already jailbroken",for: .disabled)
+//            tryButton.alpha = 0.5
+//        }
         
     }
     
@@ -69,7 +69,7 @@ struct Logging {
                 if self.mach_port == mach_port_t(MACH_PORT_NULL) {
                     
                     // We failed :(
-                    Logging.message = "Escaping sandbox"
+                    Logging.message = "escaping sandbox"
                     self.present(UIStoryboard(name: "Main", bundle:nil).instantiateViewController(withIdentifier: "FailedViewController"), animated:true, completion:nil)
                     
                 } else {
@@ -107,16 +107,16 @@ struct Logging {
                         self.tryButton.isEnabled = false
                         self.tryButton.setTitle("done 🎉",for: .disabled)
                     } else {
-                        Logging.message = "Bypassing KPP"
+                        Logging.message = "bypassing KPP"
                         self.showFailure()
                     }
                     
                 } else {
-                    Logging.message = "Privilege escalation"
+                    Logging.message = "privilege escalation"
                     self.showFailure()
                 }
             } else {
-                Logging.message = "Patching amfid"
+                Logging.message = "patching amfid"
                 self.showFailure()
             }
         })
