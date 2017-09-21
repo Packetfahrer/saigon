@@ -88,9 +88,6 @@ void init_default(){
      There's a check whether 0 <= chroma <= 4, Taken from *(X19 + W8)
      The only call from that branch is just below a lot of memcpys.
      
-     0xfffffff0066a4AD0: chroma
-     0xfffffff0066a4AD0 - 0xfffffff0066a4AA8 = 0x28
-     
      Let's say that W8 is 0x4AD0 (our case for that symbol).
      We see that there's a memcpy(X19 + 0x4AA8, X27 + 0x3B70, 0x5AC)
      Our chroma offset falls within that memcpy.
@@ -108,7 +105,19 @@ void init_default(){
      The same as before goes here, ui32Width is being checked, it has to be > 0xC0
      It just checked just slightly after the chroma format IDC check.
      We see that the memcpy that is responsible for copying ui32Width looks like that:
-     memcpy(X19 + 0x194C, X27 + 0xA14)
+     memcpy(X19 + 0x194C, X27 + 0xA14) // AVEH7
+     
+     --- AVEH7 ---
+     
+     
+     --- VXE380 --- (1)
+     memcpy(X19 + 0X14)
+     LDR             W10, [X19,#0x14]
+     AND             W8, W10, #0xFFFF
+     CMP             W8, #0x7F
+     
+     
+     
      X28 is ui32Width in our case, which is X19 + 0x194C.
      Therefore 0xA14 is ui32Width in our case
      */
@@ -116,7 +125,7 @@ void init_default(){
      v30 = v13 + 0x194C;
      *(_DWORD *)v30 <= 0xBFu
      */
-    g_offsets.encode_frame_offset_ui32_width = (0x380); // AVEH7: 0xA10+4
+    g_offsets.encode_frame_offset_ui32_width = (0x7F); // AVEH7: 0xA10+4 - VXE380: 0x14
     
     /*
      Just the same explanation as before, but instead of 0x194C, 0x1950 is being checked.

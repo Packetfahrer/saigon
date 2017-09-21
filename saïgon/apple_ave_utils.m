@@ -168,8 +168,7 @@ kern_return_t apple_ave_utils_encode_frame(io_connect_t conn, void * input_buffe
  * Returns:			kern_return_t and output buffer as an output parameter.
  */
 
-kern_return_t apple_ave_utils_prepare_to_encode_frames(io_connect_t conn, void * input_buffer,
- void * output_buffer) {
+kern_return_t apple_ave_utils_prepare_to_encode_frames(io_connect_t conn, void * input_buffer, void * output_buffer) {
 	
 	kern_return_t ret = KERN_ABORTED;
 	size_t output_buffer_size = ENCODE_FRAME_OUTPUT_BUFFER_SIZE;
@@ -184,7 +183,7 @@ kern_return_t apple_ave_utils_prepare_to_encode_frames(io_connect_t conn, void *
         output_buffer, &output_buffer_size);
     
     if(ret != KERN_SUCCESS) {
-        printf("[ERROR]: Failed calling method (PREPARE_TO_ENCODE_FRAMES): %X\n", ret);
+        printf("[ERROR]: Prepare to encode frame (error code: %X)\n", ret);
         return KERN_ABORTED;
     }
 
